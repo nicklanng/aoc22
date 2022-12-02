@@ -81,14 +81,14 @@ func calculatePart1Score(firstPosition, secondPosition byte) int {
 	opponent := byteToHand(firstPosition)
 	me := byteToHand(secondPosition)
 	result := playGame(opponent, me)
-	return 1 + int(me) + int(result)
+	return scoreGame(me, result)
 }
 
 func calculatePart2Score(firstPosition, secondPosition byte) int {
 	opponent := byteToHand(firstPosition)
 	result := byteToResult(secondPosition)
 	me := handToThrowForResult(opponent, result)
-	return 1 + int(me) + int(result)
+	return scoreGame(me, result)
 }
 
 func playGame(opponent, me Hand) Result {
@@ -118,4 +118,8 @@ func handToThrowForResult(opponent Hand, result Result) Hand {
 	default:
 		panic("unknown result")
 	}
+}
+
+func scoreGame(me Hand, result Result) int {
+	return 1 + int(me) + int(result)
 }
