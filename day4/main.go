@@ -5,9 +5,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"github.com/nicklanng/aoc22/lib"
 	"log"
-	"strings"
 )
 
 //go:embed input
@@ -23,20 +21,13 @@ func main() {
 	for scanner.Scan() {
 		s := scanner.Text()
 
-		assignment1Str, assignment2Str, ok := strings.Cut(s, ",")
-		if !ok {
-			panic("no comma in assignment pairs")
+		var elf1Min, elf1Max, elf2Min, elf2Max int
+		if _, err := fmt.Sscanf(s, "%d-%d,%d-%d", &elf1Min, &elf1Max, &elf2Min, &elf2Max); err != nil {
+			panic(err)
 		}
 
-		assignment1, ok := parseAssignment(assignment1Str)
-		if !ok {
-			panic("failed to parse assignment 1 string")
-		}
-
-		assignment2, ok := parseAssignment(assignment2Str)
-		if !ok {
-			panic("failed to parse assignment 2 string")
-		}
+		assignment1 := assignment{min: elf1Min, max: elf1Max}
+		assignment2 := assignment{min: elf2Min, max: elf2Max}
 
 		if assignment1.contains(assignment2) || assignment2.contains(assignment1) {
 			partOneCount++
@@ -53,18 +44,6 @@ func main() {
 
 	fmt.Printf("Part 1 Count: %d\n", partOneCount)
 	fmt.Printf("Part 2 Count: %d\n", partTwoCount)
-}
-
-func parseAssignment(s string) (assignment, bool) {
-	minStr, maxStr, ok := strings.Cut(s, "-")
-	if !ok {
-		return assignment{}, false
-	}
-
-	min := lib.MustParseInt(minStr)
-	max := lib.MustParseInt(maxStr)
-
-	return assignment{min: min, max: max}, true
 }
 
 type assignment struct {
