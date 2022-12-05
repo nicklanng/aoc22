@@ -5,8 +5,8 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"github.com/nicklanng/aoc22/lib"
 	"log"
-	"strconv"
 	"strings"
 )
 
@@ -61,14 +61,8 @@ func parseAssignment(s string) (assignment, bool) {
 		return assignment{}, false
 	}
 
-	min, err := strconv.Atoi(minStr)
-	if err != nil {
-		return assignment{}, false
-	}
-	max, err := strconv.Atoi(maxStr)
-	if err != nil {
-		return assignment{}, false
-	}
+	min := lib.MustParseInt(minStr)
+	max := lib.MustParseInt(maxStr)
 
 	return assignment{min: min, max: max}, true
 }

@@ -5,9 +5,9 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"github.com/nicklanng/aoc22/lib"
 	"log"
 	"sort"
-	"strconv"
 )
 
 //go:embed input
@@ -30,10 +30,7 @@ func main() {
 			}
 			currentElf = 0
 		default:
-			i, err := strconv.Atoi(s)
-			if err != nil {
-				panic(err)
-			}
+			i := lib.MustParseInt(s)
 			currentElf += i
 		}
 	}
