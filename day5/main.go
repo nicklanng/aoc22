@@ -6,13 +6,10 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/nicklanng/aoc22/lib"
-	"strings"
 	"unicode"
 )
 
-const (
-	stackCount = 9
-)
+const stackCount = 9
 
 //go:embed input
 var input []byte
@@ -27,11 +24,11 @@ func main() {
 
 	for scanner.Scan() {
 		s := scanner.Text()
-		tokens := strings.Split(s, " ")
 
-		numberOfMoves := lib.MustParseInt(tokens[1])
-		src := lib.MustParseInt(tokens[3]) - 1
-		dst := lib.MustParseInt(tokens[5]) - 1
+		var numberOfMoves, src, dst int
+		if _, err := fmt.Sscanf(s, "move %d from %d to %d", &numberOfMoves, &src, &dst); err != nil {
+			panic(err)
+		}
 
 		// crateMover9000(&stacks, numberOfMoves, src, dst)
 		crateMover9001(&stacks, numberOfMoves, src, dst)
@@ -75,20 +72,20 @@ func parseStartingImage(scanner *bufio.Scanner) ([9]lib.Stack[rune], error) {
 
 func crateMover9000(stacks *[9]lib.Stack[rune], numberOfMoves, src, dst int) {
 	for i := 0; i < numberOfMoves; i++ {
-		crate, ok := stacks[src].Pop()
+		crate, ok := stacks[src-1].Pop()
 		if !ok {
 			panic("not enough crates")
 		}
-		stacks[dst].Push(crate)
+		stacks[dst-1].Push(crate)
 	}
 }
 
-func crateMover9001(stacks *[9]lib.Stack[rune], numberOfMoves int, src int, dst int) {
+func crateMover9001(stacks *[9]lib.Stack[rune], numberOfMoves, src, dst int) {
 	var toBeMoved []rune
 
 	// pop the stacks to a temp holding slice
 	for i := 0; i < numberOfMoves; i++ {
-		crate, ok := stacks[src].Pop()
+		crate, ok := stacks[src-1].Pop()
 		if !ok {
 			panic("not enough crates")
 		}
@@ -97,6 +94,6 @@ func crateMover9001(stacks *[9]lib.Stack[rune], numberOfMoves int, src int, dst 
 
 	// push in reverse
 	for i := len(toBeMoved) - 1; i >= 0; i-- {
-		stacks[dst].Push(toBeMoved[i])
+		stacks[dst-1].Push(toBeMoved[i])
 	}
 }
