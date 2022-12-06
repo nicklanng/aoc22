@@ -3,7 +3,6 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"sort"
 )
 
 const (
@@ -25,20 +24,16 @@ func findFirstMarker(length int) int {
 			return i
 		}
 	}
-
 	return -1
 }
 
 func uniqueBytes(s []byte) bool {
-	packet := make([]byte, len(s))
-	copy(packet, s)
-
-	sort.Slice(packet, func(i, j int) bool { return packet[i] < packet[j] })
-
-	for j := 1; j < len(packet); j++ {
-		if packet[j-1] == packet[j] {
+	m := make([]bool, 256)
+	for j := 0; j < len(s); j++ {
+		if m[s[j]] {
 			return false
 		}
+		m[s[j]] = true
 	}
 	return true
 }
