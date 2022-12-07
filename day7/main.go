@@ -29,7 +29,7 @@ func NewFileSystem(space int) FileSystem {
 	return FileSystem{
 		TotalSpace:       space,
 		CurrentSpace:     space,
-		Root:             &File{Name: "/"},
+		Root:             root,
 		CurrentDirectory: root,
 	}
 }
