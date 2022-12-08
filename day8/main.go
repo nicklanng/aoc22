@@ -100,7 +100,7 @@ func partOne(width, height int, trees []byte) {
 }
 
 func partTwo(width int, height int, trees []byte) {
-	scenicScores := make([]int, len(trees))
+	var maxSceneScore int
 
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
@@ -151,18 +151,11 @@ func partTwo(width int, height int, trees []byte) {
 				}
 			}
 
-			scenicScores[y*width + x] = right * left * down * up
-		}
-	}
-
-	var score int
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			index := y*width + x
-			if scenicScores[index] > score {
-				score = scenicScores[index]
+			if  right * left * down * up > maxSceneScore {
+				maxSceneScore = right * left * down * up
 			}
 		}
 	}
-	fmt.Printf("Part two score: %d\n", score)
+
+	fmt.Printf("Part two score: %d\n", maxSceneScore)
 }
