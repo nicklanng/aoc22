@@ -78,7 +78,7 @@ func main() {
 	if err := scanner.Err(); err != nil {
 		panic(err)
 	}
-	
+
 	// part 1
 	tailPositions := map[Vector2i]struct{}{}
 	rope := NewRope(2)
