@@ -9,3 +9,10 @@ func MustParseInt(s string) int {
 	}
 	return number
 }
+
+func IntAbs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
