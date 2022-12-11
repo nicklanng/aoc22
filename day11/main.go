@@ -17,6 +17,7 @@ type Monkey struct {
 	Items            []int
 	InspectOperation Operation
 	TestDivisor      int
+	TestFunc func(int) int
 	TestTrueTarget int
 	TestFalseTarget int
 
@@ -33,14 +34,8 @@ func main() {
 		performRound(monkeys, func(i int) int { return i / 3 })
 	}
 
-	var topInspects [2]int
-	for i := 0; i < len(monkeys); i++ {
-		if monkeys[i].inspectCount > topInspects[0] {
-			topInspects[0] = monkeys[i].inspectCount
-			sort.Slice(topInspects[:], func(i, j int) bool { return topInspects[i] < topInspects[j] })
-		}
-	}
-	fmt.Printf("Part 1 output: %d\n", topInspects[0]*topInspects[1])
+	sort.Slice(monkeys, func(i, j int) bool { return monkeys[i].inspectCount > monkeys[j].inspectCount })
+	fmt.Printf("Part 1 output: %d\n", monkeys[0].inspectCount*monkeys[1].inspectCount)
 
 
 	// part 2
@@ -57,15 +52,8 @@ func main() {
 		performRound(monkeys, func(i int) int { return i % modulo })
 	}
 
-	topInspects[0] = 1
-	topInspects[1] = 1
-	for i := 0; i < len(monkeys); i++ {
-		if monkeys[i].inspectCount > topInspects[0] {
-			topInspects[0] = monkeys[i].inspectCount
-			sort.Slice(topInspects[:], func(i, j int) bool { return topInspects[i] < topInspects[j] })
-		}
-	}
-	fmt.Printf("Part 2 output: %d\n", topInspects[0]*topInspects[1])
+	sort.Slice(monkeys, func(i, j int) bool { return monkeys[i].inspectCount > monkeys[j].inspectCount })
+	fmt.Printf("Part 2 output: %d\n", monkeys[0].inspectCount*monkeys[1].inspectCount)
 }
 
 func performRound(monkeys []*Monkey, worryHandler func(int) int ) {
@@ -80,13 +68,7 @@ func performRound(monkeys []*Monkey, worryHandler func(int) int ) {
 			thisMonkey.Items[0] = thisMonkey.InspectOperation(thisMonkey.Items[0])
 			thisMonkey.Items[0] = worryHandler(thisMonkey.Items[0])
 
-			var targetMonkey *Monkey
-			if thisMonkey.Items[0]%thisMonkey.TestDivisor == 0 {
-				targetMonkey = monkeys[thisMonkey.TestTrueTarget]
-			} else {
-				targetMonkey = monkeys[thisMonkey.TestFalseTarget]
-			}
-
+			var targetMonkey = monkeys[thisMonkey.TestFunc(thisMonkey.Items[0])]
 			targetMonkey.Items = append(targetMonkey.Items, thisMonkey.Items[0])
 			thisMonkey.Items = thisMonkey.Items[1:]
 		}
@@ -103,10 +85,10 @@ func parseMonkeys() []*Monkey {
 		case "":
 			continue
 		default:
-			var turn Monkey
+			var monkey Monkey
 
 			// parse monkey ID
-			fmt.Sscanf(scanner.Text(), "Monkey %d:", &turn.MonkeyID)
+			fmt.Sscanf(scanner.Text(), "Monkey %d:", &monkey.MonkeyID)
 
 			// parse starting items
 			scanner.Scan()
@@ -114,7 +96,7 @@ func parseMonkeys() []*Monkey {
 			startingItemsStr = strings.TrimPrefix(scanner.Text(), "  Starting items: ")
 			startingItemsStrSlice := strings.Split(startingItemsStr, ",")
 			for _, str := range startingItemsStrSlice {
-				turn.Items = append(turn.Items, lib.MustParseInt(strings.TrimSpace(str)))
+				monkey.Items = append(monkey.Items, lib.MustParseInt(strings.TrimSpace(str)))
 			}
 
 			// parse operation
@@ -126,26 +108,35 @@ func parseMonkeys() []*Monkey {
 			fmt.Sscanf(scanner.Text(), "  Operation: new = old %s %s", &operator, &operand)
 			switch operand {
 			case "old":
-				turn.InspectOperation = func(old int) int { return old*old }
+				monkey.InspectOperation = func(old int) int { return old*old }
 			default:
 				operandInt := lib.MustParseInt(operand)
 				switch operator {
 				case "+":
-					turn.InspectOperation = func(old int) int { return old+operandInt }
+					monkey.InspectOperation = func(old int) int { return old+operandInt }
 				case "*":
-					turn.InspectOperation = func(old int) int { return old*operandInt }
+					monkey.InspectOperation = func(old int) int { return old*operandInt }
 				}
 			}
 
 			// parse test
+			var divisor, trueTarget, falseTarget int
 			scanner.Scan()
-			fmt.Sscanf(scanner.Text(), "  Test: divisible by %d", &turn.TestDivisor)
+			fmt.Sscanf(scanner.Text(), "  Test: divisible by %d", &divisor)
 			scanner.Scan()
-			fmt.Sscanf(scanner.Text(), "    If true: throw to monkey %d", &turn.TestTrueTarget)
+			fmt.Sscanf(scanner.Text(), "    If true: throw to monkey %d", &trueTarget)
 			scanner.Scan()
-			fmt.Sscanf(scanner.Text(), "    If false: throw to monkey %d", &turn.TestFalseTarget)
+			fmt.Sscanf(scanner.Text(), "    If false: throw to monkey %d", &falseTarget)
 
-			monkeys = append(monkeys, &turn)
+			monkey.TestDivisor = divisor
+			monkey.TestFunc = func(i int) int {
+				if i%monkey.TestDivisor == 0 {
+					return trueTarget
+				}
+				return falseTarget
+			}
+
+			monkeys = append(monkeys, &monkey)
 		}
 	}
 
