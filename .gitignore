@@ -24,3 +24,4 @@ go.work
 main
 
 .idea
+.DS_Store
