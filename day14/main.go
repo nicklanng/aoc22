@@ -27,33 +27,27 @@ func main() {
 	)
 
 	// part 1
+	sandCount = 0
 	tiles = parseInput(false)
-	for {
+	for simulate(tiles[:]) {
 		sandCount++
-		if !simulate(tiles[:]) {
-			break
-		}
 	}
-	fmt.Printf("Part 1 output: %d\n", sandCount-1)
+	fmt.Printf("Part 1 output: %d\n", sandCount)
 
 	// part 2
-	tiles = parseInput(true)
 	sandCount = 0
-	for {
+	tiles = parseInput(true)
+	for simulate(tiles[:]) {
 		sandCount++
-		if !simulate(tiles[:]) {
-			break
-		}
 	}
-
-	fmt.Printf("Part 2 output: %d\n", sandCount)
+	fmt.Printf("Part 2 output: %d\n", sandCount+1)
 }
 
 func simulate(tiles []byte) bool {
 	point := 500
 
 	for {
-		if point+width > len(tiles) {
+		if point+width >= len(tiles) {
 			return false
 		}
 
@@ -62,6 +56,8 @@ func simulate(tiles []byte) bool {
 			point += width
 			continue
 		}
+
+		// FYI these will wrap around if on the edges of map, fine for this puzzle though
 
 		// try to move down left
 		if tiles[point+width-1] == Air {
@@ -99,8 +95,7 @@ func parseInput(drawFloor bool) [width * height]byte {
 
 		// draw rocks
 		for i := 0; i < len(points)-1; i++ {
-			start := points[i]
-			end := points[i+1]
+			start, end := points[i], points[i+1]
 
 			if start.Y > highestY {
 				highestY = start.Y
