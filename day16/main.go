@@ -1,12 +1,11 @@
 package main
 
-// this is so gross
-
 import (
 	"bufio"
 	"bytes"
 	_ "embed"
 	"fmt"
+	"github.com/nicklanng/aoc22/lib"
 	"math"
 	"strings"
 )
@@ -15,146 +14,179 @@ import (
 var input []byte
 
 type Searcher struct {
-	position          string
-	destination       string
+	position          int
+	destination       int
 	timeToDestination int
+	waiting           bool
 }
 
-type SearchState struct {
-	Me              Searcher
-	Elephant        Searcher
-	includeElephant bool
-	time            int
-	flow            int
-	totalReleased   int
+type State struct {
+	Me            Searcher
+	Elephant      Searcher
+	visitedValves lib.Bitfield1[uint64]
+	time          int
+	flow          int
+	totalReleased int
+}
+
+func (s *State) Tick() {
+	s.time++
+	s.totalReleased += s.flow
+	s.Me.timeToDestination--
+	s.Elephant.timeToDestination--
+}
+
+func (s *State) SetMyDestination(i, destination, distance int) {
+	s.Me.timeToDestination = distance
+	s.Me.destination = destination
+	s.visitedValves.Set(i)
+}
+
+func (s *State) SetElephantDestination(i, destination, distance int) {
+	s.Elephant.timeToDestination = distance
+	s.Elephant.destination = destination
+	s.visitedValves.Set(i)
 }
 
 func main() {
-	adjacency, nameToIndex, flowRates := parseInput()
+	adjacency, valveToIndex, flowRates := parseInput()
 	distanceMatrix := createDistanceMatrix(adjacency)
 
-	var possibleTargets []string
+	var valves []int
 	for k := range flowRates {
-		possibleTargets = append(possibleTargets, k)
+		valves = append(valves, k)
 	}
 
-	part1MaxReleased := search(SearchState{
-		Me: Searcher{
-			position: "AA",
-		},
-		includeElephant: false,
-	}, 30, possibleTargets, nameToIndex, flowRates, distanceMatrix)
-	fmt.Println(part1MaxReleased)
+	indexToValve := map[int]string{}
+	for k, v := range valveToIndex {
+		indexToValve[v] = k
+	}
 
-	part2MaxReleased := search(SearchState{
+	partOneState := State{
 		Me: Searcher{
-			position: "AA",
+			position:    valveToIndex["AA"],
+			destination: -1,
+		},
+	}
+
+	partOneState = search(partOneState, false, valves, distanceMatrix, flowRates)
+	fmt.Println(partOneState)
+
+	partTwoState := State{
+		time: 4,
+		Me: Searcher{
+			position:    valveToIndex["AA"],
+			destination: -1,
 		},
 		Elephant: Searcher{
-			position: "AA",
+			position:    valveToIndex["AA"],
+			destination: -1,
 		},
-		includeElephant: true,
-	}, 26, possibleTargets, nameToIndex, flowRates, distanceMatrix)
-	fmt.Println(part2MaxReleased)
+	}
+	partTwoState = search(partTwoState, true, valves, distanceMatrix, flowRates)
+	fmt.Println(partTwoState)
 }
 
-func search(state SearchState, maxTime int, possibleTargets []string, nameToIndex map[string]int, flowRates map[string]int, distanceMatrix [][]int) SearchState {
-	var stateToReturn SearchState
+func search(initialState State, useElephant bool, valves []int, distanceMatrix [][]int, flowRates map[int]int) State {
+	bestState := initialState
+
+	stateQueue := lib.Queue[State]{}
+	stateQueue.Push(initialState)
+
 	for {
-		// check for me needing a new destination and set up that branch
-		if state.Me.destination == "" {
-			for i, destination := range possibleTargets {
-				nextState := state
+		state, ok := stateQueue.Pop()
+		if !ok {
+			break
+		}
 
-				nextState.Me.destination = destination
-				posIndex := nameToIndex[nextState.Me.position]
-				dstIndex := nameToIndex[nextState.Me.destination]
-				nextState.Me.timeToDestination = distanceMatrix[posIndex][dstIndex]
-
-				dupSlice := make([]string, len(possibleTargets))
-				copy(dupSlice, possibleTargets)
-				dupSlice = append(dupSlice[:i], dupSlice[i+1:]...)
-
-				if state.includeElephant && state.Elephant.destination == "" {
-					for j, destination := range dupSlice {
-						nextState.Elephant.destination = destination
-						posIndex := nameToIndex[nextState.Elephant.position]
-						dstIndex := nameToIndex[nextState.Elephant.destination]
-						nextState.Elephant.timeToDestination = distanceMatrix[posIndex][dstIndex]
-						dupSlice2 := make([]string, len(dupSlice))
-						copy(dupSlice2, dupSlice)
-						dupSlice2 = append(dupSlice2[:j], dupSlice2[j+1:]...)
-
-						finalState := search(nextState, maxTime, dupSlice2, nameToIndex, flowRates, distanceMatrix)
-						if finalState.totalReleased > stateToReturn.totalReleased {
-							stateToReturn = finalState
-						}
-					}
-				} else {
-					finalState := search(nextState, maxTime, dupSlice, nameToIndex, flowRates, distanceMatrix)
-					if finalState.totalReleased > stateToReturn.totalReleased {
-						stateToReturn = finalState
-					}
+		// if I don't know where to go
+		if state.Me.destination == -1 && !state.Me.waiting {
+			var branched bool
+			for i := range valves {
+				// if we've already been to this valve, ignore
+				if state.visitedValves.Has(i) {
+					continue
 				}
+
+				branched = true
+				branchState := state
+
+				// set new destination and update travel time
+				branchState.SetMyDestination(i, valves[i], distanceMatrix[branchState.Me.position][valves[i]])
+
+				// search that branch of possibility for the best pressure released
+				stateQueue.Push(branchState)
+			}
+			if branched {
+				continue
 			}
 		}
 
-		if state.includeElephant && state.Elephant.destination == "" {
-			nextState := state
-
-			for i, destination := range possibleTargets {
-				nextState.Elephant.destination = destination
-				posIndex := nameToIndex[nextState.Elephant.position]
-				dstIndex := nameToIndex[nextState.Elephant.destination]
-				nextState.Elephant.timeToDestination = distanceMatrix[posIndex][dstIndex]
-
-				dupSlice := make([]string, len(possibleTargets))
-				copy(dupSlice, possibleTargets)
-				dupSlice = append(dupSlice[:i], dupSlice[i+1:]...)
-
-				finalState := search(nextState, maxTime, dupSlice, nameToIndex, flowRates, distanceMatrix)
-				if finalState.totalReleased > stateToReturn.totalReleased {
-					stateToReturn = finalState
+		// if the elephant doesnt know where to go next
+		if useElephant && state.Elephant.destination == -1 && !state.Elephant.waiting {
+			var branched bool
+			for i := range valves {
+				// if we've already been to this valve, ignore
+				if state.visitedValves.Has(i) {
+					continue
 				}
+
+				branchState := state
+				branched = true
+
+				// set new destination and update travel time
+				branchState.SetElephantDestination(i, valves[i], distanceMatrix[branchState.Me.position][valves[i]])
+
+				// search that branch of possibility for the best pressure released
+				stateQueue.Push(branchState)
+			}
+			if branched {
+				continue
 			}
 		}
 
-		// tick
-		state.time++
-		state.Me.timeToDestination--
-		state.totalReleased += state.flow
-
-		// turn valve
-		if state.Me.position == state.Me.destination {
-			state.Me.destination = ""
-			state.flow += flowRates[state.Me.position]
+		if state.Me.destination == -1 {
+			state.Me.waiting = true
+		}
+		if state.Elephant.destination == -1 {
+			state.Elephant.waiting = true
 		}
 
-		if state.Me.timeToDestination == 0 {
-			state.Me.position = state.Me.destination
+		state.Tick()
+
+		if !state.Me.waiting {
+			if state.Me.position == state.Me.destination {
+				state.Me.destination = -1
+				state.flow += flowRates[state.Me.position]
+			}
+
+			if state.Me.timeToDestination == 0 {
+				state.Me.position = state.Me.destination
+			}
 		}
 
-		if state.includeElephant {
-			state.Elephant.timeToDestination--
+		if useElephant && !state.Elephant.waiting {
+			if state.Elephant.position == state.Elephant.destination {
+				state.Elephant.destination = -1
+				state.flow += flowRates[state.Elephant.position]
+			}
+
 			if state.Elephant.timeToDestination == 0 {
 				state.Elephant.position = state.Elephant.destination
 			}
-
-			if state.Elephant.position == state.Elephant.destination {
-				state.Elephant.destination = ""
-				state.flow += flowRates[state.Elephant.position]
-			}
 		}
 
-		if state.time == maxTime {
-			if state.totalReleased > stateToReturn.totalReleased {
-				stateToReturn = state
-			}
-			return stateToReturn
+		if state.time < 30 {
+			stateQueue.Push(state)
+			continue
 		}
 
-		//fmt.Println(state)
+		if state.totalReleased > bestState.totalReleased {
+			bestState = state
+		}
 	}
+
+	return bestState
 }
 
 func createDistanceMatrix(adjList [][]int) [][]int {
@@ -174,7 +206,7 @@ func createDistanceMatrix(adjList [][]int) [][]int {
 		}
 		distance[sourceVertex] = 0
 
-		// breadth-first partOneSearch
+		// breadth-first search
 		queue := []int{sourceVertex}
 		for len(queue) > 0 {
 			vertex := queue[0]
@@ -199,10 +231,10 @@ func createDistanceMatrix(adjList [][]int) [][]int {
 	return distanceMatrix
 }
 
-func parseInput() ([][]int, map[string]int, map[string]int) {
+func parseInput() ([][]int, map[string]int, map[int]int) {
 	var adjacency [][]int
 	nameToValveIndex := map[string]int{}
-	flowRates := map[string]int{}
+	flowRates := map[int]int{}
 
 	scanner := bufio.NewScanner(bytes.NewReader(input))
 
@@ -223,7 +255,7 @@ func parseInput() ([][]int, map[string]int, map[string]int) {
 		}
 
 		if flowRate > 0 {
-			flowRates[valve] = flowRate
+			flowRates[valveIndex] = flowRate
 		}
 
 		_, neighborsStr, _ := strings.Cut(scanner.Text(), "valve")
