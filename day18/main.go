@@ -46,7 +46,7 @@ func main() {
 
 	voxels = generateLava(voxels)
 	exposedSides = countExposedSides(voxels)
-g	fmt.Printf("Part 2 output: %d\n", exposedSides)
+	fmt.Printf("Part 2 output: %d\n", exposedSides)
 }
 
 func generateLava(voxels [30][30][30]byte) [30][30][30]byte {
