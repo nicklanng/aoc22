@@ -1,6 +1,9 @@
 package lib
 
-import "strconv"
+import (
+	"math"
+	"strconv"
+)
 
 func MustParseInt(s string) int {
 	number, err := strconv.Atoi(s)
@@ -15,4 +18,14 @@ func IntAbs(x int) int {
 		return -x
 	}
 	return x
+}
+
+func IntMax(x ...int) int {
+	max := math.MinInt
+	for i := range x {
+		if x[i] > max {
+			max = x[i]
+		}
+	}
+	return max
 }
