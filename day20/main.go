@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/nicklanng/aoc22/lib"
+	"math/big"
 )
 
 //go:embed input
@@ -30,9 +31,6 @@ func decrypt(file []int, scalar int, runs int) []int {
 	}
 
 	copy(mixed, file)
-	for i := range mixed {
-		mixed[i] *= scalar
-	}
 
 	for k := 0; k < runs; k++ {
 		for i, num := range file {
@@ -41,28 +39,27 @@ func decrypt(file []int, scalar int, runs int) []int {
 			}
 
 			currentPos, _ := lib.Find(indices, i)
-			newPos := currentPos + num
-			for newPos < 0 {
-				newPos += len(file) - 1
-			}
-			if newPos >= (len(file) - 1) {
-				newPos = newPos % (len(file) - 1)
-			}
 
-			value := mixed[currentPos]
-			if newPos > currentPos {
+			x := big.NewInt(int64(currentPos + num*scalar))
+			newPos := x.Mod(x, big.NewInt(int64(len(file)-1))).Int64()
+
+			if int(newPos) > currentPos {
 				copy(mixed[currentPos:newPos], mixed[currentPos+1:newPos+1])
-				mixed[newPos] = value
+				mixed[newPos] = num
 				copy(indices[currentPos:newPos], indices[currentPos+1:newPos+1])
 				indices[newPos] = i
 			} else {
 				copy(mixed[newPos+1:currentPos+1], mixed[newPos:currentPos])
-				mixed[newPos] = value
+				mixed[newPos] = num
 				copy(indices[newPos+1:currentPos+1], indices[newPos:currentPos])
 				indices[newPos] = i
 			}
 
 		}
+	}
+
+	for i := range mixed {
+		mixed[i] *= scalar
 	}
 
 	return mixed
