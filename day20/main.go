@@ -23,13 +23,16 @@ func main() {
 }
 
 func decrypt(file []int, scalar int, runs int) []int {
-	mixed := make([]int, len(file))
-	indices := make([]int, len(file))
+	for i := range file {
+		file[i] *= scalar
+	}
 
+	indices := make([]int, len(file))
 	for i := range indices {
 		indices[i] = i
 	}
 
+	mixed := make([]int, len(file))
 	copy(mixed, file)
 
 	for k := 0; k < runs; k++ {
@@ -40,7 +43,7 @@ func decrypt(file []int, scalar int, runs int) []int {
 
 			currentPos, _ := lib.Find(indices, i)
 
-			x := big.NewInt(int64(currentPos + num*scalar))
+			x := big.NewInt(int64(currentPos + num))
 			newPos := x.Mod(x, big.NewInt(int64(len(file)-1))).Int64()
 
 			if int(newPos) > currentPos {
@@ -57,11 +60,6 @@ func decrypt(file []int, scalar int, runs int) []int {
 
 		}
 	}
-
-	for i := range mixed {
-		mixed[i] *= scalar
-	}
-
 	return mixed
 }
 
