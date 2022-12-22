@@ -80,31 +80,6 @@ func main() {
 	fmt.Println(partOneScore)
 }
 
-//func debugPrintBoard(tiles []byte, width, height int, position lib.Vector2i) {
-//	upLeft := image.Point{0, 0}
-//	lowRight := image.Point{width, height}
-//	img := image.NewRGBA(image.Rectangle{upLeft, lowRight})
-//
-//	for x := 0; x < width; x++ {
-//		for y := 0; y < height; y++ {
-//			switch tiles[y*width+x] {
-//			case Void:
-//				img.Set(x, y, image.Black)
-//			case Wall:
-//				img.Set(x, y, image.White)
-//			case Floor:
-//				img.Set(x, y, color.RGBA{150, 150, 150, 0xff})
-//			}
-//			if x == position.X && y == position.Y {
-//				img.Set(x, y, color.RGBA{255, 0, 0, 0xff})
-//			}
-//		}
-//	}
-//
-//	f, _ := os.Create(fmt.Sprintf("image%d.png", time.Now().UnixMicro()))
-//	png.Encode(f, img)
-//}
-
 func moveWithinBoard(position lib.Vector2i, direction Direction, width int, height int) lib.Vector2i {
 	nextPosition := position.Add(direction.Vector())
 	if nextPosition.X <= 0 {
@@ -145,7 +120,6 @@ func parseInput() (int, int, []byte, []any) {
 		case "":
 			scanner.Scan()
 			fields := splitOnAndAfter(scanner.Text(), "LR")
-			fmt.Println(fields)
 			for _, f := range fields {
 				switch f {
 				case "":
