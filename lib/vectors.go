@@ -22,6 +22,20 @@ func (v Vector2i) UnitNormalize() Vector2i {
 	}
 	return v
 }
+func (v Vector2i) Neighbors() [8]Vector2i {
+	return [8]Vector2i{
+		{X: v.X - 1, Y: v.Y - 1},
+		{X: v.X, Y: v.Y - 1},
+		{X: v.X + 1, Y: v.Y - 1},
+
+		{X: v.X - 1, Y: v.Y},
+		{X: v.X + 1, Y: v.Y},
+
+		{X: v.X - 1, Y: v.Y + 1},
+		{X: v.X, Y: v.Y + 1},
+		{X: v.X + 1, Y: v.Y + 1},
+	}
+}
 func (v *Vector2i) ParseString(s string) error {
 	_, err := fmt.Sscanf(s, "%d,%d", &v.X, &v.Y)
 	return err
